@@ -1,6 +1,6 @@
 {
-  "name": "passport-totp",
-  "version": "0.0.2",
+  "name": "passport-totp-auth",
+  "version": "0.1.0",
   "description": "TOTP authentication strategy for Passport.",
   "keywords": [
     "passport",
@@ -13,34 +13,36 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/jaredhanson/passport-totp.git"
+    "url": "git://github.com/supernovus/passport-totp.git"
   },
   "bugs": {
-    "url": "http://github.com/jaredhanson/passport-totp/issues"
+    "url": "https://github.com/supernovus/passport-totp/issues"
   },
-  "author": {
-    "name": "Jared Hanson",
-    "email": "jaredhanson@gmail.com",
-    "url": "http://www.jaredhanson.net/"
-  },
-  "licenses": [
+  "contributors": [
     {
-      "type": "MIT",
-      "url": "http://www.opensource.org/licenses/MIT"
+      "name": "Jared Hanson",
+      "email": "jaredhanson@gmail.com",
+      "url": "https://github.com/jaredhanson/",
+      "note": "Original author (and primary author of Passport)"
+    },
+    {
+      "name": "Ilya Verbitskiy",
+      "url": "https://github.com/ilich/passport-2fa-totp",
+      "note": "Author of lib/google-authenticator.js"
+    },
+    {
+      "name": "Tim Totten",
+      "url": "https://github.com/supernovus/",
+      "note": "The one who made this fork"
     }
   ],
-  "main": "./lib",
+  "license": "MIT",
   "dependencies": {
-    "notp": "2.0.x",
-    "passport-strategy": "1.0.0",
-    "pkginfo": "0.2.x"
-  },
-  "devDependencies": {
-    "mocha": "1.x.x",
-    "chai": "1.x.x"
-  },
-  "scripts": {
-    "test": "NODE_PATH=./lib node_modules/.bin/mocha --reporter spec --require test/bootstrap/node test/*.test.js"
+    "notp": "^2.0.0",
+    "passport-strategy": "^1.0.0",
+    "pkginfo": "^0.4.0",
+    "qr-image": "^3.2.0",
+    "thirty-two": "^1.0.2"
   },
   "engines": {
     "node": ">= 0.4.0"
