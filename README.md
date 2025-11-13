@@ -17,7 +17,7 @@ policy, and outside the scope of both Passport and this strategy.
 ## Fork Notes
 
 This is a fork of the original [passport-totp](https://github.com/jaredhanson/passport-totp/) package,
-which hadn't been updated since 2015. The API has been tweaked and is directly backwards compatible
+which hadn't been updated since 2015. The API has been tweaked and is NOT directly backwards compatible
 as the argument signature of the _setup_ callback function has changed.
 
 ## Install
@@ -43,7 +43,7 @@ Ensure the key is decoded first if it is stored as Base32, Base64, etc.
       let secret = GoogleAuthenticator.decodeSecret(key.value);
       return done(null, secret, key.period);
     });
-    
+
   }));
 ```
 
