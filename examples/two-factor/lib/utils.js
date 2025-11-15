@@ -1,3 +1,5 @@
+// TODO: Will likely nuke this file as its unnecessary with the new libraries.
+
 exports.randomKey = function(len) {
   var buf = []
     , chars = 'abcdefghijklmnopqrstuvwxyz0123456789'

@@ -1,48 +1,19 @@
-var express = require('express')
+'use strict';
+
+const express = require('express')
+  , ejsLayouts = require('express-ejs-layouts')
+  , bodyParser = require('body-parser')
+  , session = require('express-session')
   , flash = require('connect-flash')
   , loggedin = require('connect-ensure-login')
   , base32 = require('thirty-two')
-  , utils = require('./utils')
   , passport = require('passport')
   , LocalStrategy = require('passport-local').Strategy
-  , TotpStrategy = require('../..').Strategy
-  
-
-var users = [
-    { id: 1, username: 'bob', password: 'secret', email: 'bob@example.com' }
-  , { id: 2, username: 'joe', password: 'birthday', email: 'joe@example.com' }
-];
-
-var keys = {}
-
-function findById(id, fn) {
-  var idx = id - 1;
-  if (users[idx]) {
-    fn(null, users[idx]);
-  } else {
-    fn(new Error('User ' + id + ' does not exist'));
-  }
-}
-
-function findByUsername(username, fn) {
-  for (var i = 0, len = users.length; i < len; i++) {
-    var user = users[i];
-    if (user.username === username) {
-      return fn(null, user);
-    }
-  }
-  return fn(null, null);
-}
-
-function findKeyForUserId(id, fn) {
-  return fn(null, keys[id]);
-}
-
-function saveKeyForUserId(id, key, fn) {
-  keys[id] = key;
-  return fn(null);
-}
-
+  , TOTP = require('../..')
+  , TotpStrategy = TOTP.Strategy
+  , {GoogleAuthenticator} = TOTP
+  , db = require('./lib/database')
+  ;
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -54,11 +25,8 @@ passport.serializeUser(function(user, done) {
 });
 
 passport.deserializeUser(function(id, done) {
-  findById(id, function (err, user) {
-    done(err, user);
-  });
+  db.users.get(id, done);
 });
-
 
 // Use the LocalStrategy within Passport.
 //   Strategies in passport require a `verify` function, which accept
@@ -71,7 +39,7 @@ passport.use(new LocalStrategy(function(username, password, done) {
       // username, or the password is not correct, set the user to `false` to
       // indicate failure and set a flash message.  Otherwise, return the
       // authenticated `user`.
-      findByUsername(username, function(err, user) {
+      db.users.findOne({username}, function(err, user) {
         if (err) { return done(err); }
         if (!user) { return done(null, false, { message: 'Invalid username or password' }); }
         if (user.password != password) { return done(null, false, { message: 'Invalid username or password' }); }
@@ -81,37 +49,36 @@ passport.use(new LocalStrategy(function(username, password, done) {
   }));
 
 passport.use(new TotpStrategy(
-  function(user, done) {
+  function(rep, opts, done) {
     // setup function, supply key and period to done callback
-    findKeyForUserId(user.id, function(err, obj) {
+    db.keys.get(rep.user.id, function(err, obj) {
       if (err) { return done(err); }
-      return done(null, obj.key, obj.period);
+      let secret = GoogleAuthenticator.decodeSecret(obj.key);
+      return done(null, secret, obj.period);
     });
   }
 ));
 
-
-
-var app = express();
+const app = express();
 
 // configure Express
-app.configure(function() {
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'ejs');
-  app.engine('ejs', require('ejs-locals'));
-  app.use(express.static(__dirname + '/../../public'));
-  app.use(express.logger());
-  app.use(express.cookieParser());
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(express.session({ secret: 'keyboard cat' }));
-  app.use(flash());
-  // Initialize Passport!  Also use passport.session() middleware, to support
-  // persistent login sessions (recommended).
-  app.use(passport.initialize());
-  app.use(passport.session());
-  app.use(app.router);
-});
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+//app.engine('ejs', require('ejs'));
+app.use(ejsLayouts);
+//app.set('layout', 'layout.ejs')
+
+//app.use(express.logger());
+//app.use(express.cookieParser());
+app.use(express.bodyParser());
+app.use(express.methodOverride());
+app.use(express.session({ secret: 'keyboard cat' }));
+app.use(flash());
+// Initialize Passport!  Also use passport.session() middleware, to support
+// persistent login sessions (recommended).
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(app.router);
 
 
 app.get('/', function(req, res){
@@ -124,33 +91,36 @@ app.get('/account', loggedin.ensureLoggedIn(), ensureSecondFactor, function(req,
 });
 
 app.get('/setup', loggedin.ensureLoggedIn(), function(req, res, next){
-  findKeyForUserId(req.user.id, function(err, obj) {
+  db.keys.get(req.user.id, function(err, obj) {
     if (err) { return next(err); }
+
+    let keyData;
+    let commit = () => res.render('setup', { 
+      user: req.user, 
+      key: keyData.secret, 
+      qrImage: keyData.qr,
+    });
+
     if (obj) {
       // two-factor auth has already been setup
-      var encodedKey = base32.encode(obj.key);
-      
-      // generate QR code for scanning into Google Authenticator
-      // reference: https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
-      var otpUrl = 'otpauth://totp/' + req.user.email
-                 + '?secret=' + encodedKey + '&period=' + (obj.period || 30);
-      var qrImage = 'https://chart.googleapis.com/chart?chs=166x166&chld=L|0&cht=qr&chl=' + encodeURIComponent(otpUrl);
-      
-      res.render('setup', { user: req.user, key: encodedKey, qrImage: qrImage });
+      keyData = GoogleAuthenticator.register({
+        name: req.user.email,
+        secret: obj.key,
+        period: obj.period,
+      });
+      commit();
     } else {
-      // new two-factor setup.  generate and save a secret key
-      var key = utils.randomKey(10);
-      var encodedKey = base32.encode(key);
-      
-      // generate QR code for scanning into Google Authenticator
-      // reference: https://code.google.com/p/google-authenticator/wiki/KeyUriFormat
-      var otpUrl = 'otpauth://totp/' + req.user.email
-                 + '?secret=' + encodedKey + '&period=30';
-      var qrImage = 'https://chart.googleapis.com/chart?chs=166x166&chld=L|0&cht=qr&chl=' + encodeURIComponent(otpUrl);
-  
-      saveKeyForUserId(req.user.id, { key: key, period: 30 }, function(err) {
+      // new two-factor setup, generate and save a secret key
+      keyData = GoogleAuthenticator.register({
+        name: req.user.email,
+      });
+
+      db.keys.put(req.user.id, { 
+        key: keyData.secret, 
+        period: keyData.spec.period,
+      }, function(err) {
         if (err) { return next(err); }
-        res.render('setup', { user: req.user, key: encodedKey, qrImage: qrImage });
+        commit();
       });
     }
   });
