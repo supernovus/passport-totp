@@ -6,9 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-11-??
-This will be the first release of the `passport-totp-auth` package when I
-finish working on it. Release date TBD.
+## [0.1.0] - 2025-11-18
+The first release of the `passport-totp-auth` package since it was forked.
 ### Added
 - Imported `google-authenticator.js` from the [passport-2fa-totp] package.
 ### Changed
@@ -25,6 +24,13 @@ finish working on it. Release date TBD.
 - Rewrote the `GoogleAuthenticator.register()` function almost entirely.
   The new version supports almost every option of the Key Uri Format.
   Even the ones that Google themselves apparently never bothered to use.
+- Refactored the entire Example app.
+  - Updated it from Express v3 to Express v5.
+  - Split most of server.js into several smaller files.
+  - Updated it to use the GoogleAuthenticator library.
+  - Updated it to use express-ejs-layouts.
+  - Updated the `setup.ejs` template to use the SVG format QR code,
+    including some CSS rules to make it a reasonable size.
 
 ## [0.0.2] - 2015-08-27
 ### Note

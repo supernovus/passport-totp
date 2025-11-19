@@ -65,9 +65,6 @@ For example, as route middleware in an [Express] application:
 
 For a complete, working example, refer to the [two-factor example].
 
-Or at least it will be a complete working example once I refactor it to use the
-changed APIs in this fork. Right now it would fail terribly.
-
 ## Tests
 
 The original tests are currently disabled as they depended on ancient versions of 

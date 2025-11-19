@@ -12,6 +12,8 @@ const users = [
 
 const keys = {}
 
+// TODO: register new user functionality.
+
 function getNextUserId() {
   let curIds = users.map(user => user.id);
   let id = 1;
@@ -62,6 +64,7 @@ module.exports = {
     find: findUsers,
     findOne: findUser,
     get: getUserById,
+    nextId: getNextUserId,
   },
 
   keys: {

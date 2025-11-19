@@ -1,6 +1,12 @@
-<% layout('layout') -%>
-
+<style>
+  svg {
+    height: 20em;
+    width: 20em;
+  }
+</style>
 <p>Scan this QR Code in Google Authenticator</p>
-<img src="<%- qrImage %>"/>
+<%- key.qr %>
 <p>- or enter this key manually -</p>
-<b><%= key %></b>
+<b><%= key.secret %></b>
+<p>- for diagnostics -</p>
+<code><%= key.uri %></code>

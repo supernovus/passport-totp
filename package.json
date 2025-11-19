@@ -28,7 +28,7 @@
     {
       "name": "Ilya Verbitskiy",
       "url": "https://github.com/ilich/passport-2fa-totp",
-      "note": "Author of lib/google-authenticator.js"
+      "note": "Author of passport-2fa-totp package"
     },
     {
       "name": "Tim Totten",
@@ -43,8 +43,5 @@
     "pkginfo": "^0.4.0",
     "qr-image": "^3.2.0",
     "thirty-two": "^1.0.2"
-  },
-  "engines": {
-    "node": ">= 0.4.0"
   }
 }
